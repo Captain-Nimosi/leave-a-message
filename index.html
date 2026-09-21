@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Leave a Message</title>
+<title>Leave Nimosi a Message</title>
 <meta name="description" content="니모시에게 메시지를 남겨주세요. 메시지는 캐나다 집 프린터에서 영수증으로 출력돼요.">
 <meta name="theme-color" content="#1c1c1a">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%E2%9C%89%EF%B8%8F</text></svg>">
@@ -30,8 +30,8 @@
     background: var(--page);
     color: var(--ink);
     font-family: var(--font);
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 14px;
+    line-height: 1.5;
     padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(56px + env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: center;
@@ -39,6 +39,28 @@
   }
 
   .wrap { width: min(100%, 380px); }
+
+  /* 보내기 성공 시 위로 인쇄되어 나오는 것처럼 보이는 영수증 조각 */
+  .print-slip {
+    max-height: 0;
+    overflow: hidden;
+    background: var(--paper);
+    text-align: center;
+    transition: max-height .45s ease-out;
+  }
+  .print-slip.show { max-height: 92px; }
+  .print-slip.eject { animation: slipEject .8s ease-in forwards; }
+  @keyframes slipEject {
+    0%   { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-130px); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .print-slip { transition: none; }
+    .print-slip.eject { animation: none; opacity: 0; }
+  }
+  .slip-inner { padding: 16px 24px 20px; }
+  .slip-title { margin: 0; font-family: "Galmuri9", var(--font); font-size: 13px; color: var(--success); }
+  .slip-sub { margin: 4px 0 0; font-size: 11px; color: var(--faded); font-variant-numeric: tabular-nums; }
 
   /* 영수증 종이 */
   .receipt {
@@ -63,34 +85,38 @@
   h1 {
     margin: 0;
     font-family: "Galmuri9", var(--font);
-    font-size: 20px;
+    font-size: 17px;
     line-height: 1.4;
     font-weight: 400;
     text-align: center;
+    text-transform: uppercase;
   }
   p.subtitle {
     margin: 6px 0 0;
-    font-size: 14px;
+    font-size: 12px;
     text-align: center;
     color: var(--faded);
   }
-  p.clock {
+  .meta {
     margin: 14px 0 0;
-    font-size: 13px;
-    text-align: center;
+    font-size: 11px;
     color: var(--faded);
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em;
+    text-transform: uppercase;
   }
+  .meta-row { display: flex; justify-content: space-between; gap: 10px; margin: 3px 0 0; }
+  .meta-row span:first-child { flex: none; }
+  .meta-row span:last-child { text-align: right; }
 
   .rule { border: 0; border-top: 1px dashed var(--line); margin: 18px 0; }
 
   .field { margin: 0 0 4px; }
-  input[type="text"], input[type="password"], textarea {
+  input[type="text"], input[type="password"] {
     display: block;
     width: 100%;
     font: inherit;
-    font-size: 16px;
+    font-size: 14px;
     color: var(--ink);
     background: transparent;
     border: 0;
@@ -99,18 +125,37 @@
     padding: 6px 0 8px;
     outline: none;
   }
-  input::placeholder, textarea::placeholder { color: var(--faded); opacity: 1; }
-  input[type="text"]:focus-visible, input[type="password"]:focus-visible, textarea:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: 2px;
+  input[type="text"]:focus, input[type="password"]:focus {
+    border-bottom: 1px solid var(--ink);
   }
+  textarea {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 0;
+    padding: 12px;
+    outline: none;
+  }
+  textarea:focus { border: 1px solid var(--ink); }
+  input::placeholder, textarea::placeholder { color: var(--faded); opacity: 1; }
 
-  textarea { resize: vertical; min-height: 132px; line-height: 1.7; padding-top: 10px; }
+  textarea { resize: none; min-height: 160px; max-height: 260px; overflow-y: auto; line-height: 1.6; }
+  .char-count {
+    margin: 6px 0 0;
+    font-size: 11px;
+    text-align: right;
+    color: var(--faded);
+    font-variant-numeric: tabular-nums;
+  }
 
   .photo-row { margin-top: 16px; }
   button.photo {
     font: inherit;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--ink);
     background: transparent;
     border: 1px solid var(--line);
@@ -127,7 +172,7 @@
   }
   .photo-preview button.remove {
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--faded);
     background: none;
     border: 0;
@@ -136,40 +181,51 @@
     padding: 4px 0;
   }
 
-  .remember { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--faded); margin: 14px 0 0; }
-  .remember input { width: 16px; height: 16px; accent-color: var(--ink); }
+  .remember { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--faded); margin: 14px 0 0; }
+  .remember input { width: 15px; height: 15px; accent-color: var(--ink); }
 
   button.send {
     display: block;
     width: 100%;
     margin-top: 22px;
     font: inherit;
-    font-size: 16px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 400;
     color: var(--paper);
     background: var(--ink);
     border: 1px solid var(--ink);
-    padding: 13px 12px;
+    padding: 12px 12px;
     cursor: pointer;
   }
   button.send:active { transform: translateY(1px); }
   button.send:disabled { opacity: .5; cursor: default; }
   button.send:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
-  .status { min-height: 20px; margin: 12px 0 0; font-size: 14px; text-align: center; color: var(--faded); }
+  .status { min-height: 20px; margin: 12px 0 0; font-size: 13px; text-align: center; color: var(--faded); }
   .status.error { color: var(--error); }
   .status.success { color: var(--success); font-weight: 700; }
 
-  p.thanks { margin: 0; font-size: 13px; text-align: center; color: var(--faded); }
+  p.thanks { margin: 0; font-size: 12px; text-align: center; color: var(--faded); }
+  p.notice { margin: 4px 0 0; font-size: 10px; text-align: left; color: var(--faded); }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <div class="print-slip" id="print-slip" aria-hidden="true">
+    <div class="slip-inner">
+      <p class="slip-title" id="slip-title">전달 완료!</p>
+      <p class="slip-sub" id="slip-sub"></p>
+    </div>
+  </div>
+
   <main class="receipt" id="receipt">
-    <h1>Leave a Message</h1>
+    <h1>Leave Nimosi a Message</h1>
     <p class="subtitle">니모시에게 전하는 메시지</p>
-    <p class="clock" id="clock" aria-live="off"></p>
+    <div class="meta" aria-live="off">
+      <p class="meta-row"><span>접수 시간:</span><span id="clock"></span></p>
+      <p class="meta-row"><span>접수 번호:</span><span id="txn">―</span></p>
+    </div>
 
     <hr class="rule">
 
@@ -179,7 +235,9 @@
       </div>
 
       <div class="field" style="margin-top: 18px;">
-        <textarea id="body" maxlength="500" placeholder="메시지"></textarea>
+        <textarea id="body" maxlength="1000" placeholder="메시지"></textarea>
+        <p class="char-count" id="char-count">0 / 1,000</p>
+        <p class="notice">이모지·특수 기호는 인쇄되지 않아요</p>
       </div>
 
       <div class="photo-row">
@@ -207,7 +265,7 @@
     </form>
 
     <hr class="rule">
-    <p class="thanks">이용해주셔서 감사합니다</p>
+    <p class="thanks">감사합니다.</p>
   </main>
 
 </div>
@@ -223,8 +281,60 @@
   const remember = $("remember"), sendBtn = $("send"), statusEl = $("status"), receiptEl = $("receipt");
   const photoInput = $("photo-input"), photoBtn = $("photo-btn");
   const photoPreview = $("photo-preview"), photoPreviewImg = $("photo-preview-img"), photoRemove = $("photo-remove");
+  const charCount = $("char-count"), txnEl = $("txn");
+  const printSlip = $("print-slip"), slipSub = $("slip-sub");
+  const BODY_MAX = 1000;
 
   let photoBase64 = null;
+  let audioCtx = null;
+
+  // ---------- 프린터 소리 & 인쇄되어 나오는 효과 ----------
+  function primeAudio() {
+    // iOS/크롬은 사용자 클릭 안에서 만들어야 소리가 나서, 보내기 누르는 순간 바로 만들어요
+    if (audioCtx) return;
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; }
+  }
+
+  function playPrintSound() {
+    if (!audioCtx) return;
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    const now = audioCtx.currentTime;
+    const clicks = 14;
+    for (let i = 0; i < clicks; i++) {
+      const t = now + i * 0.05;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(170 + Math.random() * 50, t);
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.05, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.04);
+    }
+    // 마지막에 종이 끊는 듯한 짧은 노이즈
+    const cutAt = now + clicks * 0.05;
+    const dur = 0.15;
+    const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * dur), audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buf;
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(0.06, cutAt);
+    noise.connect(noiseGain).connect(audioCtx.destination);
+    noise.start(cutAt);
+  }
+
+  function printSlipOut() {
+    slipSub.textContent = `${txnEl.textContent}   ${$("clock").textContent.trim()}`;
+    printSlip.classList.remove("eject");
+    printSlip.classList.add("show");
+    playPrintSound();
+    setTimeout(() => printSlip.classList.add("eject"), 900);
+    setTimeout(() => printSlip.classList.remove("show", "eject"), 900 + 800);
+  }
 
   function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -246,6 +356,7 @@
     receiptEl.classList.remove("sent");
     void receiptEl.offsetWidth; // 애니메이션을 다시 트리거하기 위한 리플로우
     receiptEl.classList.add("sent");
+    printSlipOut();
   }
 
   // 실시간 시계 (yyyy-mm-dd  am/pm hh:mm:ss)
@@ -262,6 +373,14 @@
   tickClock();
   setInterval(tickClock, 1000);
 
+  function updateCharCount() {
+    charCount.textContent = `${body.value.length.toLocaleString()} / ${BODY_MAX.toLocaleString()}`;
+  }
+  function showTxn(id) {
+    txnEl.textContent = id === undefined || id === null ? "―" : `#${String(id).padStart(6, "0")}`;
+  }
+  updateCharCount();
+
   // 시작할 때: 저장된 이름/암호, 그리고 주소 뒤의 #k=암호 처리 (NFC/QR용)
   (function init() {
     const params = new URLSearchParams(location.hash.replace(/^#/, ""));
@@ -274,7 +393,7 @@
     if (location.hash) history.replaceState(null, "", location.pathname + location.search);
   })();
 
-  body.addEventListener("input", () => setStatus(""));
+  body.addEventListener("input", () => { setStatus(""); updateCharCount(); });
 
   // ---------- 사진 첨부 ----------
   photoBtn.addEventListener("click", () => photoInput.click());
@@ -322,14 +441,19 @@
   // ---------- 보내기 ----------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    primeAudio(); // 클릭 이벤트 안에서 바로 만들어야 소리가 나요
 
-    const s = sender.value.trim();
-    const b = body.value.trim();
+    const sRaw = sender.value.trim();
+    const bRaw = body.value.trim();
     const p = pass.value.trim();
 
-    if (!s) return fail("보내는 사람 이름을 적어주세요.", sender);
-    if (!b) return fail("메시지를 적어주세요.", body);
+    if (!sRaw && !bRaw && !photoBase64) {
+      return fail("이름, 메시지, 사진 중 하나는 입력해주세요.", sender);
+    }
     if (!p) return fail("암호를 입력해주세요.", pass);
+
+    const s = sRaw || "이름 없음";
+    const b = bRaw || (photoBase64 ? "(사진 첨부)" : "(내용 없음)");
 
     sendBtn.disabled = true;
     setStatus("전달 중...");
@@ -349,20 +473,22 @@
       const data = await res.json().catch(() => null);
 
       if (res.ok && data && data.ok) {
-        safeSet("lam.sender", s);
+        if (sRaw) safeSet("lam.sender", sRaw);
         if (remember.checked) safeSet("lam.pass", p); else safeDel("lam.pass");
 
         body.value = "";
+        updateCharCount();
         photoBase64 = null;
         photoPreviewImg.src = "";
         photoPreview.hidden = true;
+        showTxn(data.id);
         celebrate("전달 완료!");
       } else if (data && data.error === "wrong_passcode") {
         fail("암호가 맞지 않아요. 받은 암호를 다시 확인해주세요.", pass);
       } else if (data && data.error === "too_many") {
         fail("짧은 시간에 너무 많이 보냈어요. 1분 뒤에 다시 눌러주세요.");
       } else if (data && data.error === "bad_input") {
-        fail("이름은 30자, 메시지는 500자까지 보낼 수 있어요.");
+        fail("이름은 30자, 메시지는 1,000자까지 보낼 수 있어요.");
       } else if (data && data.error === "image_too_big") {
         fail("사진 용량이 너무 커요. 다른 사진으로 시도해주세요.");
       } else if (data && data.error === "not_ready") {
