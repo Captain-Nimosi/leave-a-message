@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Leave Nimosi a message</title>
+<meta name="description" content="니모시에게 메시지를 남겨주세요. 메시지는 영수증으로 출력돼요.">
+<meta name="theme-color" content="#18222e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic+Coding:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #dfe4e8;
+    --paper: #fdfdfb;
+    --ink: #22272e;
+    --ink-soft: #55606b;
+    --faded: #8b949e;
+    --line: #cdd3d9;
+    --stamp: #c62f2a;
+    --font: "Nanum Gothic Coding", ui-monospace, "Apple SD Gothic Neo", "Malgun Gothic", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --page: #18222e; }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.6;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) 16px calc(56px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* 영수증 종이 */
+  .receipt {
+    position: relative;
+    width: min(100%, 400px);
+    background: var(--paper);
+    padding: 34px 26px 38px;
+    box-shadow: 0 22px 40px -22px rgba(0, 0, 0, .5);
+  }
+  .receipt::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 100%;
+    height: 9px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='9' viewBox='0 0 16 9'%3E%3Cpolygon points='0,0 16,0 8,9' fill='%23fdfdfb'/%3E%3C/svg%3E") repeat-x;
+  }
+
+  header { text-align: center; }
+  .tagline { margin: 0 0 14px; font-size: 14px; color: var(--ink-soft); }
+  h1 {
+    margin: 0;
+    font-size: clamp(30px, 9.4vw, 40px);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+  .sub { margin: 14px 0 0; font-size: 16px; color: var(--ink); }
+
+  .rule { border: 0; border-top: 2px dashed var(--line); margin: 24px 0; }
+
+  .field { margin: 0 0 22px; padding: 0; border: 0; min-width: 0; }
+  .field > label, .field > legend {
+    display: block;
+    padding: 0;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+
+  /* 받는 곳 선택 */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label {
+    display: block;
+    text-align: center;
+    padding: 10px 6px;
+    border: 2px solid var(--ink);
+    cursor: pointer;
+    font-weight: 700;
+    user-select: none;
+  }
+  .seg label + input + label { border-left: 0; }
+  .seg input:checked + label { background: var(--ink); color: var(--paper); }
+  .seg input:focus-visible + label { outline: 3px solid var(--stamp); outline-offset: 2px; }
+
+  input[type="text"], input[type="password"], textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--ink);
+    border-radius: 0;
+    padding: 6px 0;
+    outline: none;
+  }
+  input[type="text"]:focus-visible, input[type="password"]:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--stamp);
+    outline-offset: 3px;
+  }
+
+  /* 줄 그어진 메모지 */
+  textarea {
+    display: block;
+    resize: vertical;
+    min-height: 168px;
+    line-height: 28px;
+    padding: 0;
+    background-image: repeating-linear-gradient(transparent 0, transparent 27px, var(--line) 27px, var(--line) 28px);
+    background-attachment: local;
+  }
+  .meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 13px; color: var(--faded); }
+
+  .remember { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-soft); margin: -8px 0 22px; }
+  .remember input { width: 18px; height: 18px; accent-color: var(--ink); }
+
+  /* 영수증 항목 (점선 리더) */
+  .items { margin: 0 0 22px; padding: 0; }
+  .row { display: flex; align-items: baseline; }
+  .row dt { display: flex; flex: 1; align-items: baseline; margin: 0; }
+  .row dt::after { content: ""; flex: 1; margin: 0 8px; border-bottom: 2px dotted var(--faded); transform: translateY(-4px); }
+  .row dd { margin: 0; flex: none; }
+  .row.total { font-weight: 700; margin-top: 4px; }
+
+  button.send {
+    display: block;
+    width: 100%;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--paper);
+    background: var(--ink);
+    border: 0;
+    padding: 15px 12px;
+    cursor: pointer;
+  }
+  button.send:hover { background: #313a44; }
+  button.send:active { transform: translateY(1px); }
+  button.send:disabled { opacity: .55; cursor: default; }
+  button.send:focus-visible { outline: 3px solid var(--stamp); outline-offset: 3px; }
+
+  .status { min-height: 26px; margin: 14px 0 0; font-size: 14px; text-align: center; color: var(--ink-soft); }
+  .status.error { color: var(--stamp); }
+
+  /* 접수 도장 */
+  .stamp {
+    position: absolute;
+    left: 50%; top: 52%;
+    transform: translate(-50%, -50%) rotate(-13deg);
+    padding: 8px 20px;
+    border: 4px double var(--stamp);
+    color: var(--stamp);
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+  .stamp.show { opacity: .88; animation: slam .42s cubic-bezier(.2, .9, .3, 1.15); }
+  @keyframes slam {
+    from { opacity: 0; transform: translate(-50%, -50%) rotate(-13deg) scale(2.4); }
+    to   { opacity: .88; transform: translate(-50%, -50%) rotate(-13deg) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp.show { animation: none; }
+  }
+
+  footer { text-align: center; margin-top: 8px; }
+  .barcode {
+    height: 46px;
+    margin: 4px auto 14px;
+    max-width: 260px;
+    background: repeating-linear-gradient(90deg,
+      var(--ink) 0 2px, transparent 2px 4px,
+      var(--ink) 4px 5px, transparent 5px 9px,
+      var(--ink) 9px 12px, transparent 12px 14px,
+      var(--ink) 14px 15px, transparent 15px 18px);
+  }
+  footer p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+  footer p + p { margin-top: 2px; }
+</style>
+</head>
+<body>
+<main class="receipt">
+  <div class="stamp" id="stamp" aria-hidden="true">접수 완료</div>
+
+  <header>
+    <p class="tagline">영수증은 사랑을 싣고</p>
+    <h1>Leave Nimosi<br>a message</h1>
+    <p class="sub">니모시에게 메시지를 남겨주세요</p>
+  </header>
+
+  <hr class="rule">
+
+  <form id="form" novalidate>
+    <fieldset class="field">
+      <legend>받는 곳</legend>
+      <div class="seg">
+        <input type="radio" name="to" id="to-ca" value="ca" checked>
+        <label for="to-ca">캐나다 집</label>
+        <input type="radio" name="to" id="to-kr" value="kr">
+        <label for="to-kr">한국 집</label>
+      </div>
+    </fieldset>
+
+    <div class="field">
+      <label for="sender">보내는 사람</label>
+      <input type="text" id="sender" maxlength="30" autocomplete="nickname" placeholder="이름이나 별명">
+    </div>
+
+    <div class="field">
+      <label for="body">메시지</label>
+      <textarea id="body" maxlength="500" placeholder="여기에 적은 글이 영수증으로 나와요"></textarea>
+      <div class="meta">
+        <span>이모지는 나오지 않을 수 있어요</span>
+        <span><span id="count">0</span>/500</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="pass">암호</label>
+      <input type="password" id="pass" autocomplete="off" placeholder="전달받은 암호">
+    </div>
+
+    <label class="remember">
+      <input type="checkbox" id="remember" checked>
+      이 기기에서 암호 기억하기
+    </label>
+
+    <hr class="rule">
+
+    <dl class="items">
+      <div class="row"><dt>메시지 1건</dt><dd>0원</dd></div>
+      <div class="row"><dt>마음 (서비스)</dt><dd>0원</dd></div>
+      <div class="row total"><dt>합계</dt><dd>0원</dd></div>
+    </dl>
+
+    <button type="submit" class="send" id="send">영수증으로 보내기</button>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </form>
+
+  <hr class="rule">
+
+  <footer>
+    <div class="barcode" aria-hidden="true"></div>
+    <p>이용해주셔서 감사합니다</p>
+    <p>교환·환불은 안 되지만 답장은 언제든 환영해요</p>
+  </footer>
+</main>
+
+<script>
+  // Supabase 프로젝트 정보 (publishable key는 공개돼도 안전한 값이에요)
+  const SUPABASE_URL = "https://swkkqlibwcdvdimzqljo.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_5TM1cZjfOUbiFlVdzcn6zg_AaoD2fmz";
+
+  const $ = (id) => document.getElementById(id);
+  const form = $("form"), sender = $("sender"), body = $("body"), pass = $("pass");
+  const remember = $("remember"), sendBtn = $("send"), statusEl = $("status");
+  const stamp = $("stamp"), count = $("count");
+
+  function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function safeDel(k) { try { localStorage.removeItem(k); } catch (e) {} }
+
+  function setStatus(text, isError) {
+    statusEl.textContent = text || "";
+    statusEl.classList.toggle("error", !!isError);
+  }
+  function fail(text, el) {
+    setStatus(text, true);
+    if (el) el.focus();
+  }
+
+  // 시작할 때: 저장된 이름/암호, 그리고 주소 뒤의 #k=암호&to=kr 처리
+  (function init() {
+    const params = new URLSearchParams(location.hash.replace(/^#/, ""));
+    const k = params.get("k");
+    const to = params.get("to");
+
+    sender.value = safeGet("lam.sender") || "";
+    pass.value = k || safeGet("lam.pass") || "";
+    if (to === "kr" || to === "ca") $("to-" + to).checked = true;
+
+    // 주소창에 암호가 남지 않게 지워요
+    if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+  })();
+
+  body.addEventListener("input", () => {
+    count.textContent = body.value.length;
+    stamp.classList.remove("show");
+    setStatus("");
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const to = form.elements["to"].value;
+    const s = sender.value.trim();
+    const b = body.value.trim();
+    const p = pass.value.trim();
+
+    if (!s) return fail("보내는 사람 이름을 적어주세요.", sender);
+    if (!b) return fail("메시지를 적어주세요.", body);
+    if (!p) return fail("암호를 입력해주세요.", pass);
+
+    sendBtn.disabled = true;
+    stamp.classList.remove("show");
+    setStatus("보내는 중이에요…");
+
+    try {
+      const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/send_message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
+        body: JSON.stringify({ p_passcode: p, p_recipient: to, p_sender: s, p_body: b })
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data && data.ok) {
+        safeSet("lam.sender", s);
+        if (remember.checked) safeSet("lam.pass", p); else safeDel("lam.pass");
+
+        body.value = "";
+        count.textContent = "0";
+        void stamp.offsetWidth; // 애니메이션 다시 시작
+        stamp.classList.add("show");
+        setStatus((to === "ca" ? "캐나다 집" : "한국 집") + " 프린터에서 곧 영수증이 나와요.");
+      } else if (data && data.error === "wrong_passcode") {
+        fail("암호가 맞지 않아요. 받은 암호를 다시 확인해주세요.", pass);
+      } else if (data && data.error === "too_many") {
+        fail("짧은 시간에 너무 많이 보냈어요. 1분 뒤에 다시 눌러주세요.");
+      } else if (data && data.error === "bad_input") {
+        fail("이름은 30자, 메시지는 500자까지 보낼 수 있어요.");
+      } else if (data && data.error === "not_ready") {
+        fail("아직 준비 중이에요. 잠시 후 다시 시도해주세요.");
+      } else {
+        fail("보내지 못했어요. 잠시 후 다시 눌러주세요.");
+      }
+    } catch (err) {
+      fail("인터넷에 연결되지 않았어요. 연결을 확인하고 다시 눌러주세요.");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
