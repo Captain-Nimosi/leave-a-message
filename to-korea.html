@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Leave a Message</title>
-<meta name="description" content="니모시에게 메시지를 남겨주세요. 메시지는 캐나다 집 프린터에서 영수증으로 출력돼요.">
+<title>A Message from Nimosi</title>
+<meta name="description" content="한국 집에 메시지를 남겨주세요. 메시지는 한국 집 프린터에서 영수증으로 출력돼요.">
 <meta name="theme-color" content="#efefe9">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -159,8 +159,8 @@
 <div class="wrap">
 
   <main class="receipt">
-    <h1>Leave a Message</h1>
-    <p class="subtitle">니모시에게 전하는 메시지</p>
+    <h1>A Message from Nimosi</h1>
+    <p class="subtitle">니모시가 전하는 메시지</p>
     <p class="clock" id="clock" aria-live="off"></p>
 
     <hr class="rule">
@@ -208,7 +208,7 @@
   // Supabase 프로젝트 정보 (publishable key는 공개돼도 안전한 값이에요)
   const SUPABASE_URL = "https://swkkqlibwcdvdimzqljo.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5TM1cZjfOUbiFlVdzcn6zg_AaoD2fmz";
-  const RECIPIENT = "ca"; // 이 페이지는 캐나다 집으로만 보내요
+  const RECIPIENT = "kr"; // 이 페이지는 한국 집으로만 보내요
 
   const $ = (id) => document.getElementById(id);
   const form = $("form"), sender = $("sender"), body = $("body"), pass = $("pass");
@@ -339,7 +339,7 @@
         photoBase64 = null;
         photoPreviewImg.src = "";
         photoPreview.hidden = true;
-        setStatus("캐나다 집 프린터에서 곧 영수증이 나와요.");
+        setStatus("한국 집 프린터에서 곧 영수증이 나와요.");
       } else if (data && data.error === "wrong_passcode") {
         fail("암호가 맞지 않아요. 받은 암호를 다시 확인해주세요.", pass);
       } else if (data && data.error === "too_many") {
