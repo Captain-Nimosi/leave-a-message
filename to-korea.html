@@ -43,40 +43,52 @@
 
   .wrap { width: min(100%, 380px); }
 
-  /* 보내기 성공 시 위로 인쇄되어 나오는 것처럼 보이는 영수증 조각 */
-  .print-slip {
-    max-height: 0;
-    overflow: hidden;
-    background: var(--paper);
-    text-align: center;
-    transition: max-height .45s ease-out;
-  }
-  .print-slip.show { max-height: 92px; }
-  .print-slip.eject { animation: slipEject .8s ease-in forwards; }
-  @keyframes slipEject {
-    0%   { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(-130px); opacity: 0; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .print-slip { transition: none; }
-    .print-slip.eject { animation: none; opacity: 0; }
-  }
-  .slip-inner { padding: 16px 24px 20px; }
-  .slip-title { margin: 0; font-family: "Galmuri9", var(--font); font-size: 13px; color: var(--success); }
-  .slip-sub { margin: 4px 0 0; font-size: 11px; color: var(--faded); font-variant-numeric: tabular-nums; }
-
   /* 영수증 종이 */
   .receipt {
     position: relative;
     background: var(--paper);
     padding: 30px 24px 26px;
   }
-  @keyframes sentPulse {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(47, 125, 78, 0.45); }
-    25% { transform: scale(1.015); }
-    100% { transform: scale(1); box-shadow: 0 0 0 16px rgba(47, 125, 78, 0); }
+
+  /* 보내기 성공 시: 기존 영수증이 위로 찢겨 날아가고, 새 영수증이 아래에서 올라와요 */
+  .receipt-ghost {
+    margin: 0;
+    box-sizing: border-box;
   }
-  .receipt.sent { animation: sentPulse 0.6s ease-out; }
+  @keyframes tearAway {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
+    30% {
+      transform: translateY(-16px) rotate(-1deg);
+      opacity: 1;
+      clip-path: polygon(0 0, 100% 0, 100% 38%, 91% 34%, 83% 41%, 75% 33%, 67% 42%, 59% 32%, 51% 41%, 43% 33%, 35% 42%, 27% 32%, 19% 41%, 11% 33%, 3% 40%, 0 35%);
+    }
+    100% {
+      transform: translateY(-340px) rotate(-7deg);
+      opacity: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 38%, 91% 34%, 83% 41%, 75% 33%, 67% 42%, 59% 32%, 51% 41%, 43% 33%, 35% 42%, 27% 32%, 19% 41%, 11% 33%, 3% 40%, 0 35%);
+    }
+  }
+  .receipt-ghost.tear-away {
+    position: fixed;
+    z-index: 30;
+    pointer-events: none;
+    animation: tearAway .7s cubic-bezier(.4, 0, .2, 1) forwards;
+  }
+  .receipt.hidden-for-tear { visibility: hidden; }
+  @keyframes receiptIn {
+    0%   { transform: translateY(46px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  .receipt.entering { animation: receiptIn .45s ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .receipt-ghost.tear-away { animation: none; opacity: 0; }
+    .receipt.entering { animation: none; }
+  }
+
   .receipt::after {
     content: "";
     position: absolute;
@@ -215,13 +227,6 @@
 <body>
 <div class="wrap">
 
-  <div class="print-slip" id="print-slip" aria-hidden="true">
-    <div class="slip-inner">
-      <p class="slip-title" id="slip-title">전달 완료!</p>
-      <p class="slip-sub" id="slip-sub"></p>
-    </div>
-  </div>
-
   <main class="receipt" id="receipt">
     <h1>A Message from Nimosi</h1>
     <p class="subtitle">니모시가 전하는 메시지</p>
@@ -282,7 +287,6 @@
   const photoInput = $("photo-input"), photoBtn = $("photo-btn");
   const photoPreview = $("photo-preview"), photoPreviewImg = $("photo-preview-img"), photoRemove = $("photo-remove");
   const charCount = $("char-count"), txnEl = $("txn");
-  const printSlip = $("print-slip"), slipSub = $("slip-sub");
   const BODY_MAX = 1000;
 
   let photoBase64 = null;
@@ -327,13 +331,37 @@
     noise.start(cutAt);
   }
 
-  function printSlipOut() {
-    slipSub.textContent = `${txnEl.textContent}   ${$("clock").textContent.trim()}`;
-    printSlip.classList.remove("eject");
-    printSlip.classList.add("show");
+  // 기존 영수증을 위로 찢어 날려보내고, 자리에서 새 영수증이 올라오게 해요
+  let tearing = false;
+  function tearAndReplace(onTornAway) {
+    if (tearing) { onTornAway(); return; } // 애니메이션이 겹치지 않게 해요
+    tearing = true;
     playPrintSound();
-    setTimeout(() => printSlip.classList.add("eject"), 900);
-    setTimeout(() => printSlip.classList.remove("show", "eject"), 900 + 800);
+    const rect = receiptEl.getBoundingClientRect();
+    const ghost = receiptEl.cloneNode(true);
+    ghost.removeAttribute("id");
+    ghost.classList.add("receipt-ghost");
+    ghost.style.position = "fixed";
+    ghost.style.left = rect.left + "px";
+    ghost.style.top = rect.top + "px";
+    ghost.style.width = rect.width + "px";
+    document.body.appendChild(ghost);
+
+    receiptEl.classList.add("hidden-for-tear");
+    // 다음 프레임에 애니메이션 시작 (레이아웃이 자리 잡은 뒤)
+    requestAnimationFrame(() => ghost.classList.add("tear-away"));
+
+    const cleanup = () => {
+      ghost.remove();
+      onTornAway();
+      receiptEl.classList.remove("hidden-for-tear");
+      receiptEl.classList.add("entering");
+      receiptEl.addEventListener("animationend", () => receiptEl.classList.remove("entering"), { once: true });
+      tearing = false;
+    };
+    ghost.addEventListener("animationend", cleanup, { once: true });
+    // 애니메이션이 재생되지 않는 환경(모션 최소화 등) 대비 안전장치
+    setTimeout(() => { if (document.body.contains(ghost)) cleanup(); }, 900);
   }
 
   function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -353,10 +381,6 @@
     statusEl.textContent = text;
     statusEl.classList.remove("error");
     statusEl.classList.add("success");
-    receiptEl.classList.remove("sent");
-    void receiptEl.offsetWidth; // 애니메이션을 다시 트리거하기 위한 리플로우
-    receiptEl.classList.add("sent");
-    printSlipOut();
   }
 
   // 실시간 시계 (yyyy-mm-dd  am/pm hh:mm:ss)
@@ -473,13 +497,16 @@
       if (res.ok && data && data.ok) {
         if (remember.checked) safeSet("lam.pass", p); else safeDel("lam.pass");
 
-        body.value = "";
-        updateCharCount();
-        photoBase64 = null;
-        photoPreviewImg.src = "";
-        photoPreview.hidden = true;
-        showTxn(data.id);
-        celebrate("전달 완료!");
+        // 방금 쓴 내용이 그대로 실린 영수증이 찢겨 날아간 뒤, 빈 영수증이 올라오며 완료 안내가 떠요
+        tearAndReplace(() => {
+          body.value = "";
+          updateCharCount();
+          photoBase64 = null;
+          photoPreviewImg.src = "";
+          photoPreview.hidden = true;
+          showTxn(data.id);
+          celebrate("전달 완료!");
+        });
       } else if (data && data.error === "wrong_passcode") {
         fail("암호가 맞지 않아요. 받은 암호를 다시 확인해주세요.", pass);
       } else if (data && data.error === "too_many") {
