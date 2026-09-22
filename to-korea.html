@@ -7,10 +7,12 @@
 <meta name="description" content="한국 집에 메시지를 남겨주세요. 메시지는 한국 집 프린터에서 영수증으로 출력돼요.">
 <meta name="theme-color" content="#dcdcd4">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>%E2%9C%89%EF%B8%8F</text></svg>">
+<!-- 아이폰 사파리로 "홈 화면에 추가"했을 때 쓰이는 앱 아이콘이에요 (파비콘과는 별개) -->
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADNklEQVR4nO3cwU4bMRiFUVP1wVj2kbvMQ7DMw3RhyVCVOy2FzPy2z1mxAGViPm4mEvB0v780eM+3qy+AusRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOovPieH7+cdpjre20kzx1OfTxeWee4dP9/nLCw8jiy91uPx/9EO45iM6Iw2w8wgmnekYcJwzghryscKXvV1/AKwMzFHkhLhRHP5HNEymSRXfNy8pBAaVO52QHz/2Sn5nLlqM/23ePY8MJqZZFd/ENqQlpVctoFe45dp6Qsll0Vd7KbjghxctoFZZj2GdC6mfRVVmOYfkJmaWMVmo5hlUnZKIsunLLMSw2IdOV0Woux7DGhMyYRVd3OYapJ2TeMtoUcbTWbref6Sgr95Gu7eDplDJHHN1BH9USObikKbLoZoqjTTIhsw/GMFkcXdkJWWMwhinjaCXvUqe+93xX6beyx+q80V0vi27W5Rgun5BVy2hTL8dw1YQsnEU3/XIMJ0/I8mW0NZZjOGdCdsiiW2c5hodOyD5ltMWWY3jEhGyVRbfgcgxfOCEbltFWXY7h8xOyZxbdyssx/PeE7FxGW345ho9OyOZZdFssx/CPE6KMbpflGP46IcdfuJW9lmP46Hd6wzLahssxHEzIn5+2p02XYzj+3u9cRhNH+/23995+sHkZTRzD2xRk0YnjVW9CGYM4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEF3zR011/tswBywHkTiIxEEkDqKn+/3l6mugKMtBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA4icRCJg0gcROIgEgeROIjEQSQOInEQiYNIHETiIBIHkTiIxEEkDiJxEImDSBxE4iASB5E4iMRBJA6iXyEgGfk9t56QAAAAAElFTkSuQmCC">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/d2coding@1.3.2/d2coding-full.css">
 <style>
   :root {
     --page: #dcdcd4;
@@ -20,7 +22,7 @@
     --line: #b7b7ac;
     --error: #8a2a22;
     --success: #2f7d4e;
-    --font: "Galmuri11", "Noto Sans KR", ui-sans-serif, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    --font: "D2Coding", "Noto Sans KR", ui-monospace, "Apple SD Gothic Neo", "Malgun Gothic", monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root { --page: #14140f; }
@@ -114,10 +116,10 @@
 
   h1 {
     margin: 0;
-    font-family: "Galmuri9", var(--font);
+    font-family: var(--font);
     font-size: 17px;
     line-height: 1.4;
-    font-weight: 400;
+    font-weight: 700;
     text-align: center;
     text-transform: uppercase;
   }
@@ -133,7 +135,6 @@
     color: var(--faded);
     font-variant-numeric: tabular-nums;
     letter-spacing: .02em;
-    text-transform: uppercase;
   }
   .meta-row { display: flex; justify-content: space-between; gap: 10px; margin: 3px 0 0; }
   .meta-row span:first-child { flex: none; }
@@ -170,6 +171,8 @@
     padding: 12px;
     outline: none;
   }
+  /* D2Coding에는 비밀번호 마스킹용 점(•) 글자가 포함돼 있어서, 페이지 전체와
+     같은 글꼴을 입력창에도 그대로 써도 네모+X로 깨지는 문제가 없어요. */
   /* 모바일 사파리는 입력창 글자가 16px보다 작으면 탭할 때 화면을 확대해요.
      그래서 좁은 화면(휴대폰)에서는 입력창만 16px로 키워 확대를 막아요. */
   @media (max-width: 600px) {
@@ -379,7 +382,7 @@
     en: {
       subtitle: "A message from Nimosi",
       timeLabel: "Received:",
-      txnLabel: "Receipt No:",
+      txnLabel: "Receipt no:",
       senderPlaceholder: "Your name",
       bodyPlaceholder: "Message",
       notice: "Emojis and special symbols won't print",
