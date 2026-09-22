@@ -423,9 +423,24 @@
 
   // ---------- 프린터 소리 & 인쇄되어 나오는 효과 ----------
   function primeAudio() {
-    // iOS/크롬은 사용자 클릭 안에서 만들어야 소리가 나서, 보내기 누르는 순간 바로 만들어요
-    if (audioCtx) return;
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; return; }
+    // 아이폰 사파리는 "사용자가 직접 누른 그 순간" 안에서 오디오를 실제로
+    // 재생(또는 resume)해야만 소리가 풀려요. fetch 응답을 기다린 뒤에
+    // resume()을 부르면 이미 늦어서 계속 무음이 돼요 — 그래서 보내기를
+    // 누르는 바로 이 시점(await 전)에 반드시 동기적으로 풀어줘요.
+    if (!audioCtx) {
+      try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audioCtx = null; return; }
+    }
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {});
+    }
+    // 무음 버퍼를 하나 바로 재생해서 아이폰의 오디오 잠금을 확실히 풀어요
+    try {
+      const unlockBuf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+      const unlockSrc = audioCtx.createBufferSource();
+      unlockSrc.buffer = unlockBuf;
+      unlockSrc.connect(audioCtx.destination);
+      unlockSrc.start(0);
+    } catch (e) {}
     if (feedRawBuffer && !feedDecodedBuffer) {
       audioCtx.decodeAudioData(feedRawBuffer.slice(0))
         .then((buf) => { feedDecodedBuffer = buf; })
