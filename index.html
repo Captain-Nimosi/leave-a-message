@@ -274,10 +274,6 @@
 
     <form id="form" novalidate>
       <div class="field">
-        <input type="text" id="sender" maxlength="30" autocomplete="nickname" placeholder="보내는 사람">
-      </div>
-
-      <div class="field" style="margin-top: 18px;">
         <textarea id="body" maxlength="1000" placeholder="메시지"></textarea>
         <p class="char-count" id="char-count">0 / 1,000</p>
         <p class="notice" id="notice">이모지·특수 기호는 인쇄되지 않아요</p>
@@ -290,6 +286,10 @@
           <img id="photo-preview-img" alt="첨부한 사진 미리보기">
           <button type="button" class="remove" id="photo-remove">사진 지우기</button>
         </div>
+      </div>
+
+      <div class="field" style="margin-top: 18px;">
+        <input type="text" id="sender" maxlength="30" autocomplete="nickname" placeholder="보내는 사람">
       </div>
 
       <hr class="rule">
@@ -703,16 +703,43 @@
     statusEl.classList.add("success");
   }
 
-  // 실시간 시계 (yyyy-mm-dd  am/pm hh:mm:ss)
+  // 실시간 시계 (yyyy-mm-dd  am/pm hh:mm:ss  시간대)
   function pad(n) { return String(n).padStart(2, "0"); }
+  // 보내는 사람이 어디 있든(한국, 밴쿠버 등) 그 기기 시간대를 짧게 표시해요
+  function tzLabel() {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz === "Asia/Seoul") return "KST"; // ICU가 한국은 "GMT+9"로만 줘서 직접 표기해요
+      // BC주는 2026년 3월 서머타임 전환을 마지막으로 연중 내내 고정된 태평양시간(UTC-7)을
+      // 쓰기로 했어요(더 이상 PST/PDT로 안 바뀌어요). 브라우저의 시간대 데이터가 이 정책을
+      // 아직 못 따라갈 수 있으니 밴쿠버는 공식 약어인 "PCT"로 직접 표기해요.
+      // (출처: https://www2.gov.bc.ca/gov/content/governments/celebrating-british-columbia/daylight-saving-time)
+      if (tz === "America/Vancouver") return "PCT";
+      const parts = new Intl.DateTimeFormat("en-US", { timeZoneName: "short" }).formatToParts(new Date());
+      const found = parts.find((p) => p.type === "timeZoneName");
+      return found ? found.value : "";
+    } catch (e) {
+      return "";
+    }
+  }
+  const tzText = tzLabel();
+  // 한국어: [시간대] [오전/오후] [시각]  /  영어: [시각] [AM/PM] [시간대]
   function tickClock() {
     const d = new Date();
     let h = d.getHours();
-    const ampm = h < 12 ? "AM" : "PM";
+    const isPM = h >= 12;
     h = h % 12 || 12;
-    $("clock").textContent =
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-      `   ${ampm} ${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    const dateStr = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const timeStr = `${pad(h)}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    let rest;
+    if (lang === "ko") {
+      const ampmKo = isPM ? "오후" : "오전";
+      rest = `${tzText ? tzText + " " : ""}${ampmKo} ${timeStr}`;
+    } else {
+      const ampmEn = isPM ? "PM" : "AM";
+      rest = `${timeStr} ${ampmEn}${tzText ? " " + tzText : ""}`;
+    }
+    $("clock").textContent = `${dateStr}   ${rest}`;
   }
   tickClock();
   setInterval(tickClock, 1000);
@@ -730,6 +757,7 @@
     lang = lang === "ko" ? "en" : "ko";
     safeSet("lam.lang", lang);
     applyLang();
+    tickClock();
   });
 
   // 시작할 때: 저장된 이름/암호, 그리고 주소 뒤의 #k=암호 처리 (NFC/QR용)
