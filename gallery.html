@@ -42,20 +42,20 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  .wrap { width: min(100%, 420px); transition: width .15s ease; }
-  .wrap.viewing-messages { width: min(100%, 960px); }
+  .wrap { width: min(100%, 900px); }
 
+  /* 이 페이지는 흰 영수증 종이 배경 없이, 회색 바탕 위에 카드들만 떠 있어요 */
   .receipt {
     position: relative;
-    background: var(--paper);
-    padding: 30px 24px 26px;
+    padding: 6px 0 0;
   }
-  .receipt::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 100%;
-    height: 8px;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpolygon points='0,0 14,0 7,8' fill='%23fdfdfb'/%3E%3C/svg%3E") repeat-x;
+
+  .pass-card {
+    background: var(--paper);
+    max-width: 320px;
+    margin: 18px auto 0;
+    padding: 26px 22px;
+    box-shadow: 0 3px 12px rgba(20, 20, 15, .16);
   }
 
   h1 {
@@ -151,37 +151,33 @@
   .stream-toggle button + button { border-left: 1px solid var(--line); }
   .stream-toggle button.active { color: var(--paper); background: var(--ink); }
 
-  .month-list { margin-top: 16px; }
-  .month-list[hidden] { display: none; }
-  button.month-row {
+  /* 제목/소제목 다음 줄: 양끝 삼각형으로 이전/다음 달 이동 */
+  .month-nav {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: baseline;
-    width: 100%;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .month-nav[hidden] { display: none; }
+  button.nav-arrow {
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
+    line-height: 1;
     color: var(--ink);
     background: transparent;
     border: 0;
-    border-bottom: 1px dashed var(--line);
-    padding: 10px 0;
+    padding: 6px 10px;
     cursor: pointer;
-    text-align: left;
   }
-  button.month-row:last-child { border-bottom: 0; }
-  button.month-row .count { color: var(--faded); font-size: 11px; font-variant-numeric: tabular-nums; }
-  button.month-row:hover .ym, button.month-row:focus-visible .ym { text-decoration: underline; }
-
-  .back-row { margin-top: 14px; }
-  button.back {
-    font: inherit;
-    font-size: 12px;
-    color: var(--faded);
-    background: none;
-    border: 0;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 4px 0;
+  button.nav-arrow:disabled { color: var(--line); cursor: default; }
+  button.nav-arrow:not(:disabled):hover, button.nav-arrow:not(:disabled):focus-visible { color: var(--faded); }
+  .month-label {
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    text-align: center;
   }
 
   /* 메시지들을 실제 영수증처럼 한 장 한 장, 받은 순서대로 늘어놓아요 */
@@ -200,6 +196,13 @@
     padding: 18px 14px 20px;
     box-shadow: 0 3px 10px rgba(20, 20, 15, .16);
     font-size: 12px;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .msg-card:hover, .msg-card:focus-visible {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(20, 20, 15, .22);
+    outline: none;
   }
   /* 영수증 위아래 찢어진 가장자리 (사이트 다른 페이지와 같은 톱니 무늬) */
   .msg-card::before, .msg-card::after {
@@ -231,11 +234,6 @@
   .msg-meta-row { display: flex; justify-content: space-between; gap: 8px; }
   .msg-meta-row span:first-child { flex: none; white-space: nowrap; }
   .msg-meta-row span:last-child { text-align: right; }
-  .msg-from {
-    margin: 8px 0 0;
-    font-size: 12px;
-    font-weight: 700;
-  }
   .msg-body {
     margin: 6px 0 0;
     font-size: 12px;
@@ -250,7 +248,61 @@
     max-height: 220px;
     object-fit: cover;
   }
+  .msg-from {
+    margin: 10px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: right;
+  }
+  .msg-thanks {
+    margin: 10px 0 0;
+    padding-top: 8px;
+    border-top: 1px dashed var(--line);
+    font-size: 10px;
+    text-align: center;
+    color: var(--faded);
+  }
   .empty-note { margin: 18px 0 0; font-size: 12px; text-align: center; color: var(--faded); grid-column: 1 / -1; }
+
+  /* 영수증 하나를 크게 보는 팝업 */
+  .receipt-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 15, .55);
+    padding: 24px;
+    z-index: 50;
+  }
+  .receipt-modal[hidden] { display: none; }
+  .receipt-modal-card {
+    background: var(--paper);
+    color: var(--ink);
+    padding: 28px 22px 24px;
+    max-width: 380px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    font-size: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
+  }
+  .receipt-modal-card .msg-receipt-title { font-size: 13px; }
+  .receipt-modal-card .msg-meta { font-size: 12px; }
+  .receipt-modal-card .msg-body { font-size: 15px; }
+  .receipt-modal-card .msg-from { font-size: 14px; }
+  .receipt-modal-card .msg-thanks { font-size: 11px; }
+  .receipt-modal-close {
+    display: block;
+    margin: 16px auto 0;
+    font: inherit;
+    font-size: 12px;
+    color: var(--faded);
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -258,18 +310,24 @@
 
   <main class="receipt" id="receipt">
     <button type="button" class="lang-toggle" id="lang-toggle">EN</button>
-    <h1 id="title">Message Archive</h1>
-    <p class="subtitle" id="subtitle">지난 메시지를 월별로 모아봐요</p>
+    <h1 id="title">Archived Messages</h1>
+    <p class="subtitle" id="subtitle">받은 메시지</p>
 
-    <hr class="rule">
+    <div class="month-nav" id="month-nav" hidden>
+      <button type="button" class="nav-arrow" id="prev-month" aria-label="이전 달">◀</button>
+      <span class="month-label" id="month-label"></span>
+      <button type="button" class="nav-arrow" id="next-month" aria-label="다음 달">▶</button>
+    </div>
 
-    <form id="pass-form" novalidate>
-      <div class="field">
-        <input type="password" id="pass" autocomplete="off" placeholder="암호">
-      </div>
-      <button type="submit" class="send" id="unlock">열기</button>
-      <p class="status" id="pass-status" role="status" aria-live="polite"></p>
-    </form>
+    <div class="pass-card" id="pass-card">
+      <form id="pass-form" novalidate>
+        <div class="field">
+          <input type="password" id="pass" autocomplete="off" placeholder="암호">
+        </div>
+        <button type="submit" class="send" id="unlock">열기</button>
+        <p class="status" id="pass-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
 
     <div id="app" hidden>
       <div class="stream-toggle">
@@ -277,17 +335,19 @@
         <button type="button" id="tab-kr">니모시 → 한국집</button>
       </div>
 
-      <div class="month-list" id="month-list"></div>
+      <div class="msg-list" id="msg-list"></div>
       <p class="empty-note" id="month-empty" hidden></p>
-
-      <div class="msg-list" id="msg-list" hidden></div>
-      <div class="back-row" id="back-row" hidden>
-        <button type="button" class="back" id="back-btn">← 월 목록으로</button>
-      </div>
       <p class="status" id="app-status" role="status" aria-live="polite"></p>
     </div>
   </main>
 
+</div>
+
+<div class="receipt-modal" id="receipt-modal" hidden>
+  <div class="receipt-modal-card" id="receipt-modal-card">
+    <div id="receipt-modal-body"></div>
+    <button type="button" class="receipt-modal-close" id="receipt-modal-close"></button>
+  </div>
 </div>
 
 <script>
@@ -295,15 +355,16 @@
   const SUPABASE_KEY = "sb_publishable_5TM1cZjfOUbiFlVdzcn6zg_AaoD2fmz";
 
   const $ = (id) => document.getElementById(id);
-  const wrapEl = document.querySelector(".wrap");
-  const passForm = $("pass-form"), passInput = $("pass"), passStatus = $("pass-status"), unlockBtn = $("unlock");
-  const appEl = $("app"), monthList = $("month-list"), monthEmpty = $("month-empty");
-  const msgList = $("msg-list"), backRow = $("back-row"), backBtn = $("back-btn"), appStatus = $("app-status");
+  const passCard = $("pass-card"), passForm = $("pass-form"), passInput = $("pass"), passStatus = $("pass-status"), unlockBtn = $("unlock");
+  const appEl = $("app"), msgList = $("msg-list"), monthEmpty = $("month-empty"), appStatus = $("app-status");
   const tabCa = $("tab-ca"), tabKr = $("tab-kr");
+  const monthNav = $("month-nav"), monthLabel = $("month-label"), prevMonthBtn = $("prev-month"), nextMonthBtn = $("next-month");
+  const modal = $("receipt-modal"), modalCard = $("receipt-modal-card"), modalBody = $("receipt-modal-body"), modalClose = $("receipt-modal-close");
 
   let passcode = "";
   let recipient = "ca";
-  let monthsCache = { ca: null, kr: null };
+  let monthsCache = { ca: null, kr: null };   // list_message_months 결과 캐시 (이동 범위 계산용)
+  let currentYm = { ca: null, kr: null };     // 지금 보고 있는 달 (recipient별로 기억해요)
 
   function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -311,41 +372,43 @@
   // ---------- 한/영 ----------
   const I18N = {
     ko: {
-      title: "Message Archive",
-      subtitle: "지난 메시지를 월별로 모아봐요",
+      subtitle: "받은 메시지",
       passPlaceholder: "암호",
       unlock: "열기",
       tabCa: "친구·가족 → 니모시",
       tabKr: "니모시 → 한국집",
-      back: "← 월 목록으로",
       loading: "불러오는 중...",
       noMonths: "아직 메시지가 없어요.",
       noMessages: "이 달에는 메시지가 없어요.",
       timeLabel: "접수 시간:",
       txnLabel: "접수 번호:",
+      thanks: "감사합니다.",
+      close: "닫기",
+      prevMonth: "이전 달",
+      nextMonth: "다음 달",
       errWrongPass: "암호가 맞지 않아요.",
       errNeedPass: "암호를 입력해주세요.",
       errGeneric: "불러오지 못했어요. 잠시 후 다시 시도해주세요.",
-      countSuffix: "건",
       toggleLabel: "EN",
     },
     en: {
-      title: "Message Archive",
-      subtitle: "Browse past messages by month",
+      subtitle: "Received messages",
       passPlaceholder: "Passcode",
       unlock: "Open",
       tabCa: "Friends/family → Nimosi",
       tabKr: "Nimosi → Korea home",
-      back: "← Back to months",
       loading: "Loading...",
       noMonths: "No messages yet.",
       noMessages: "No messages this month.",
       timeLabel: "Received:",
       txnLabel: "Receipt no:",
+      thanks: "Thank you.",
+      close: "Close",
+      prevMonth: "Previous month",
+      nextMonth: "Next month",
       errWrongPass: "Wrong passcode.",
       errNeedPass: "Please enter the passcode.",
       errGeneric: "Couldn't load. Please try again.",
-      countSuffix: "",
       toggleLabel: "한국어",
     },
   };
@@ -353,14 +416,18 @@
   function t(key) { return I18N[lang][key]; }
   function applyLang() {
     document.documentElement.lang = lang;
-    $("title").textContent = t("title");
     $("subtitle").textContent = t("subtitle");
     passInput.setAttribute("placeholder", t("passPlaceholder"));
     unlockBtn.textContent = t("unlock");
     tabCa.textContent = t("tabCa");
     tabKr.textContent = t("tabKr");
-    backBtn.textContent = t("back");
+    prevMonthBtn.setAttribute("aria-label", t("prevMonth"));
+    nextMonthBtn.setAttribute("aria-label", t("nextMonth"));
+    modalClose.textContent = t("close");
     $("lang-toggle").textContent = t("toggleLabel");
+    if (currentYm[recipient]) {
+      monthLabel.textContent = fmtMonthLabel(currentYm[recipient]);
+    }
   }
   $("lang-toggle").addEventListener("click", () => {
     lang = lang === "ko" ? "en" : "ko";
@@ -380,6 +447,15 @@
   function fmtMonthLabel(ym) {
     const [y, m] = ym.split("-");
     return lang === "ko" ? `${y}년 ${parseInt(m, 10)}월` : new Date(`${ym}-01T00:00:00`).toLocaleString("en-US", { year: "numeric", month: "long" });
+  }
+  function ymNow() {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  }
+  function shiftYm(ym, delta) {
+    const [y, m] = ym.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
   }
 
   async function callRpc(name, body) {
@@ -401,96 +477,98 @@
     appStatus.classList.toggle("error", !!isError);
   }
 
-  async function loadMonths(force) {
-    monthList.hidden = false;
-    msgList.hidden = true;
-    backRow.hidden = true;
-    wrapEl.classList.remove("viewing-messages");
-    setAppStatus("");
-    if (!force && monthsCache[recipient]) {
-      renderMonths(monthsCache[recipient]);
-      return;
-    }
-    setAppStatus(t("loading"));
-    try {
-      const months = await callRpc("list_message_months", { p_passcode: passcode, p_recipient: recipient });
-      monthsCache[recipient] = months;
-      setAppStatus("");
-      renderMonths(months);
-    } catch (e) {
-      setAppStatus(t("errGeneric"), true);
-    }
+  async function ensureMonthsList(r) {
+    if (monthsCache[r]) return monthsCache[r];
+    const months = await callRpc("list_message_months", { p_passcode: passcode, p_recipient: r });
+    monthsCache[r] = months; // 이미 최신 달이 먼저 오도록 정렬돼 있어요
+    return months;
   }
 
-  function renderMonths(months) {
-    monthList.innerHTML = "";
-    monthEmpty.hidden = months.length > 0;
-    monthEmpty.textContent = t("noMonths");
-    for (const row of months) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "month-row";
-      btn.innerHTML = `<span class="ym"></span><span class="count"></span>`;
-      btn.querySelector(".ym").textContent = fmtMonthLabel(row.year_month);
-      btn.querySelector(".count").textContent = row.message_count + t("countSuffix");
-      btn.addEventListener("click", () => loadMessages(row.year_month));
-      monthList.appendChild(btn);
-    }
+  function updateNavButtons() {
+    const months = monthsCache[recipient] || [];
+    const ym = currentYm[recipient];
+    nextMonthBtn.disabled = !ym || ym >= ymNow();
+    prevMonthBtn.disabled = months.length > 0 && ym <= months[months.length - 1].year_month;
   }
 
   // 실제 카드/웹페이지에 찍히는 영수증 제목과 맞춰요
   const RECEIPT_TITLE = { ca: "LEAVE NIMOSI A MESSAGE", kr: "A MESSAGE FROM NIMOSI" };
 
-  async function loadMessages(ym) {
-    monthList.hidden = true;
-    msgList.hidden = false;
-    backRow.hidden = false;
-    wrapEl.classList.add("viewing-messages");
+  // 웹/프린트 영수증과 같은 순서로: 날짜·번호 → 본문(+사진) → 보낸 사람 → 감사합니다
+  function buildReceiptCard(m, title) {
+    const seq = "#" + String(m.recipient_seq).padStart(6, "0");
+    const card = document.createElement("div");
+    card.innerHTML = `
+      <p class="msg-receipt-title"></p>
+      <hr class="msg-rule">
+      <div class="msg-meta">
+        <p class="msg-meta-row"><span></span><span></span></p>
+        <p class="msg-meta-row"><span></span><span></span></p>
+      </div>
+      <hr class="msg-rule">
+      <p class="msg-body"></p>
+      <p class="msg-from"></p>
+      <p class="msg-thanks"></p>
+    `;
+    card.querySelector(".msg-receipt-title").textContent = title;
+    const metaRows = card.querySelectorAll(".msg-meta-row");
+    metaRows[0].children[0].textContent = t("timeLabel");
+    metaRows[0].children[1].textContent = fmtDateTime(m.created_at);
+    metaRows[1].children[0].textContent = t("txnLabel");
+    metaRows[1].children[1].textContent = seq;
+    const bodyEl = card.querySelector(".msg-body");
+    bodyEl.textContent = m.body || "";
+    if (m.image_base64) {
+      const img = document.createElement("img");
+      img.className = "msg-photo";
+      img.src = "data:image/jpeg;base64," + m.image_base64;
+      img.alt = "";
+      bodyEl.insertAdjacentElement("afterend", img);
+    }
+    card.querySelector(".msg-from").textContent = "From. " + ((m.sender || "").trim() || "―");
+    card.querySelector(".msg-thanks").textContent = t("thanks");
+    return card; // 이 div의 자식들을 그대로 msg-card / 팝업에 옮겨 써요
+  }
+
+  function openModal(m, title) {
+    modalBody.innerHTML = "";
+    modalBody.appendChild(buildReceiptCard(m, title));
+    modal.hidden = false;
+  }
+  function closeModal() { modal.hidden = true; }
+  modalClose.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !modal.hidden) closeModal(); });
+
+  async function showMonth(ym) {
+    currentYm[recipient] = ym;
+    monthNav.hidden = false;
+    monthLabel.textContent = fmtMonthLabel(ym);
+    updateNavButtons();
     setAppStatus(t("loading"));
     msgList.innerHTML = "";
+    monthEmpty.hidden = true;
     try {
       // list_messages는 이미 받은(id) 순서대로 내려줘요 — 그 순서 그대로 줄지어 보여줘요
       const rows = await callRpc("list_messages", { p_passcode: passcode, p_recipient: recipient, p_year_month: ym });
       setAppStatus("");
       if (!rows.length) {
-        const p = document.createElement("p");
-        p.className = "empty-note";
-        p.textContent = t("noMessages");
-        msgList.appendChild(p);
+        monthEmpty.hidden = false;
+        monthEmpty.textContent = t("noMessages");
         return;
       }
       const title = RECEIPT_TITLE[recipient] || RECEIPT_TITLE.ca;
       for (const m of rows) {
-        const seq = "#" + String(m.recipient_seq).padStart(6, "0");
         const card = document.createElement("div");
         card.className = "msg-card";
-
-        card.innerHTML = `
-          <p class="msg-receipt-title"></p>
-          <hr class="msg-rule">
-          <div class="msg-meta">
-            <p class="msg-meta-row"><span></span><span></span></p>
-            <p class="msg-meta-row"><span></span><span></span></p>
-          </div>
-          <p class="msg-from"></p>
-          <p class="msg-body"></p>
-        `;
-        card.querySelector(".msg-receipt-title").textContent = title;
-        const metaRows = card.querySelectorAll(".msg-meta-row");
-        metaRows[0].children[0].textContent = t("timeLabel");
-        metaRows[0].children[1].textContent = fmtDateTime(m.created_at);
-        metaRows[1].children[0].textContent = t("txnLabel");
-        metaRows[1].children[1].textContent = seq;
-        card.querySelector(".msg-from").textContent = "From. " + ((m.sender || "").trim() || "―");
-        card.querySelector(".msg-body").textContent = m.body || "";
-
-        if (m.image_base64) {
-          const img = document.createElement("img");
-          img.className = "msg-photo";
-          img.src = "data:image/jpeg;base64," + m.image_base64;
-          img.alt = "";
-          card.appendChild(img);
-        }
+        card.tabIndex = 0;
+        card.setAttribute("role", "button");
+        const built = buildReceiptCard(m, title);
+        while (built.firstChild) card.appendChild(built.firstChild);
+        card.addEventListener("click", () => openModal(m, title));
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(m, title); }
+        });
         msgList.appendChild(card);
       }
     } catch (e) {
@@ -498,25 +576,44 @@
     }
   }
 
-  backBtn.addEventListener("click", () => {
-    wrapEl.classList.remove("viewing-messages");
-    loadMonths(false);
+  prevMonthBtn.addEventListener("click", () => {
+    if (prevMonthBtn.disabled) return;
+    showMonth(shiftYm(currentYm[recipient], -1));
+  });
+  nextMonthBtn.addEventListener("click", () => {
+    if (nextMonthBtn.disabled) return;
+    showMonth(shiftYm(currentYm[recipient], 1));
   });
 
-  function setRecipient(r) {
+  async function openRecipient(r) {
     recipient = r;
     tabCa.classList.toggle("active", r === "ca");
     tabKr.classList.toggle("active", r === "kr");
-    loadMonths(false);
+    setAppStatus(t("loading"));
+    try {
+      const months = await ensureMonthsList(r);
+      if (!months.length) {
+        monthNav.hidden = true;
+        msgList.innerHTML = "";
+        setAppStatus("");
+        monthEmpty.hidden = false;
+        monthEmpty.textContent = t("noMonths");
+        return;
+      }
+      const ym = currentYm[r] || months[0].year_month; // 메시지가 있는 가장 최근 달부터 바로 보여줘요
+      await showMonth(ym);
+    } catch (e) {
+      setAppStatus(t("errGeneric"), true);
+    }
   }
-  tabCa.addEventListener("click", () => setRecipient("ca"));
-  tabKr.addEventListener("click", () => setRecipient("kr"));
+  tabCa.addEventListener("click", () => openRecipient("ca"));
+  tabKr.addEventListener("click", () => openRecipient("kr"));
 
   function unlock(p) {
     passcode = p;
-    passForm.hidden = true;
+    passCard.hidden = true;
     appEl.hidden = false;
-    setRecipient("ca");
+    openRecipient("ca");
   }
 
   passForm.addEventListener("submit", (ev) => {
