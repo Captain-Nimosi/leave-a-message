@@ -310,8 +310,8 @@
 
   <main class="receipt" id="receipt">
     <button type="button" class="lang-toggle" id="lang-toggle">EN</button>
-    <h1 id="title">Archived Messages</h1>
-    <p class="subtitle" id="subtitle">받은 메시지</p>
+    <h1 id="title">받은 메시지</h1>
+    <p class="subtitle" id="subtitle">지난 메시지를 월별로 모아봐요</p>
 
     <div class="month-nav" id="month-nav" hidden>
       <button type="button" class="nav-arrow" id="prev-month" aria-label="이전 달">◀</button>
@@ -372,7 +372,8 @@
   // ---------- 한/영 ----------
   const I18N = {
     ko: {
-      subtitle: "받은 메시지",
+      title: "받은 메시지",
+      subtitle: "지난 메시지를 월별로 모아봐요",
       passPlaceholder: "암호",
       unlock: "열기",
       tabCa: "친구·가족 → 니모시",
@@ -392,7 +393,8 @@
       toggleLabel: "EN",
     },
     en: {
-      subtitle: "Received messages",
+      title: "Archived Messages",
+      subtitle: "Browse past messages by month",
       passPlaceholder: "Passcode",
       unlock: "Open",
       tabCa: "Friends/family → Nimosi",
@@ -416,6 +418,7 @@
   function t(key) { return I18N[lang][key]; }
   function applyLang() {
     document.documentElement.lang = lang;
+    $("title").textContent = t("title");
     $("subtitle").textContent = t("subtitle");
     passInput.setAttribute("placeholder", t("passPlaceholder"));
     unlockBtn.textContent = t("unlock");
