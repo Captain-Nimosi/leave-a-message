@@ -42,7 +42,8 @@
     -webkit-text-size-adjust: 100%;
   }
 
-  .wrap { width: min(100%, 420px); }
+  .wrap { width: min(100%, 420px); transition: width .15s ease; }
+  .wrap.viewing-messages { width: min(100%, 960px); }
 
   .receipt {
     position: relative;
@@ -151,7 +152,7 @@
   .stream-toggle button.active { color: var(--paper); background: var(--ink); }
 
   .month-list { margin-top: 16px; }
-  .month-list[hidden], .msg-list[hidden] { display: none; }
+  .month-list[hidden] { display: none; }
   button.month-row {
     display: flex;
     justify-content: space-between;
@@ -183,27 +184,73 @@
     padding: 4px 0;
   }
 
-  .msg-list { margin-top: 6px; }
-  .msg-card { padding: 16px 0; border-bottom: 1px dashed var(--line); }
-  .msg-card:last-child { border-bottom: 0; }
+  /* 메시지들을 실제 영수증처럼 한 장 한 장, 받은 순서대로 늘어놓아요 */
+  .msg-list {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 26px 18px;
+    align-items: start;
+  }
+  .msg-list[hidden] { display: none; }
+  .msg-card {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 18px 14px 20px;
+    box-shadow: 0 3px 10px rgba(20, 20, 15, .16);
+    font-size: 12px;
+  }
+  /* 영수증 위아래 찢어진 가장자리 (사이트 다른 페이지와 같은 톱니 무늬) */
+  .msg-card::before, .msg-card::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    height: 7px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8'%3E%3Cpolygon points='0,0 14,0 7,8' fill='%23fdfdfb'/%3E%3C/svg%3E") repeat-x;
+  }
+  .msg-card::before { bottom: 100%; transform: rotate(180deg); }
+  .msg-card::after { top: 100%; }
+  .msg-receipt-title {
+    margin: 0;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: .03em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .msg-rule { border: 0; border-top: 1px dashed var(--line); margin: 8px 0; }
   .msg-meta {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--faded);
     font-variant-numeric: tabular-nums;
-    margin-bottom: 8px;
+    line-height: 1.6;
   }
-  .msg-body { font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+  .msg-meta-row { display: flex; justify-content: space-between; gap: 8px; }
+  .msg-meta-row span:first-child { flex: none; white-space: nowrap; }
+  .msg-meta-row span:last-child { text-align: right; }
+  .msg-from {
+    margin: 8px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .msg-body {
+    margin: 6px 0 0;
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
   .msg-photo {
     display: block;
     margin-top: 10px;
-    max-width: 100%;
-    max-height: 260px;
-    border: 1px solid var(--line);
+    width: 100%;
+    max-height: 220px;
+    object-fit: cover;
   }
-  .empty-note { margin: 18px 0 0; font-size: 12px; text-align: center; color: var(--faded); }
+  .empty-note { margin: 18px 0 0; font-size: 12px; text-align: center; color: var(--faded); grid-column: 1 / -1; }
 </style>
 </head>
 <body>
@@ -248,6 +295,7 @@
   const SUPABASE_KEY = "sb_publishable_5TM1cZjfOUbiFlVdzcn6zg_AaoD2fmz";
 
   const $ = (id) => document.getElementById(id);
+  const wrapEl = document.querySelector(".wrap");
   const passForm = $("pass-form"), passInput = $("pass"), passStatus = $("pass-status"), unlockBtn = $("unlock");
   const appEl = $("app"), monthList = $("month-list"), monthEmpty = $("month-empty");
   const msgList = $("msg-list"), backRow = $("back-row"), backBtn = $("back-btn"), appStatus = $("app-status");
@@ -273,6 +321,8 @@
       loading: "불러오는 중...",
       noMonths: "아직 메시지가 없어요.",
       noMessages: "이 달에는 메시지가 없어요.",
+      timeLabel: "접수 시간:",
+      txnLabel: "접수 번호:",
       errWrongPass: "암호가 맞지 않아요.",
       errNeedPass: "암호를 입력해주세요.",
       errGeneric: "불러오지 못했어요. 잠시 후 다시 시도해주세요.",
@@ -290,6 +340,8 @@
       loading: "Loading...",
       noMonths: "No messages yet.",
       noMessages: "No messages this month.",
+      timeLabel: "Received:",
+      txnLabel: "Receipt no:",
       errWrongPass: "Wrong passcode.",
       errNeedPass: "Please enter the passcode.",
       errGeneric: "Couldn't load. Please try again.",
@@ -353,6 +405,7 @@
     monthList.hidden = false;
     msgList.hidden = true;
     backRow.hidden = true;
+    wrapEl.classList.remove("viewing-messages");
     setAppStatus("");
     if (!force && monthsCache[recipient]) {
       renderMonths(monthsCache[recipient]);
@@ -385,13 +438,18 @@
     }
   }
 
+  // 실제 카드/웹페이지에 찍히는 영수증 제목과 맞춰요
+  const RECEIPT_TITLE = { ca: "LEAVE NIMOSI A MESSAGE", kr: "A MESSAGE FROM NIMOSI" };
+
   async function loadMessages(ym) {
     monthList.hidden = true;
     msgList.hidden = false;
     backRow.hidden = false;
+    wrapEl.classList.add("viewing-messages");
     setAppStatus(t("loading"));
     msgList.innerHTML = "";
     try {
+      // list_messages는 이미 받은(id) 순서대로 내려줘요 — 그 순서 그대로 줄지어 보여줘요
       const rows = await callRpc("list_messages", { p_passcode: passcode, p_recipient: recipient, p_year_month: ym });
       setAppStatus("");
       if (!rows.length) {
@@ -401,20 +459,31 @@
         msgList.appendChild(p);
         return;
       }
+      const title = RECEIPT_TITLE[recipient] || RECEIPT_TITLE.ca;
       for (const m of rows) {
+        const seq = "#" + String(m.recipient_seq).padStart(6, "0");
         const card = document.createElement("div");
         card.className = "msg-card";
-        const meta = document.createElement("div");
-        meta.className = "msg-meta";
-        const seq = "#" + String(m.recipient_seq).padStart(6, "0");
-        meta.innerHTML = `<span></span><span></span>`;
-        meta.children[0].textContent = (m.sender || "").trim();
-        meta.children[1].textContent = fmtDateTime(m.created_at) + " · " + seq;
-        card.appendChild(meta);
-        const body = document.createElement("div");
-        body.className = "msg-body";
-        body.textContent = m.body || "";
-        card.appendChild(body);
+
+        card.innerHTML = `
+          <p class="msg-receipt-title"></p>
+          <hr class="msg-rule">
+          <div class="msg-meta">
+            <p class="msg-meta-row"><span></span><span></span></p>
+            <p class="msg-meta-row"><span></span><span></span></p>
+          </div>
+          <p class="msg-from"></p>
+          <p class="msg-body"></p>
+        `;
+        card.querySelector(".msg-receipt-title").textContent = title;
+        const metaRows = card.querySelectorAll(".msg-meta-row");
+        metaRows[0].children[0].textContent = t("timeLabel");
+        metaRows[0].children[1].textContent = fmtDateTime(m.created_at);
+        metaRows[1].children[0].textContent = t("txnLabel");
+        metaRows[1].children[1].textContent = seq;
+        card.querySelector(".msg-from").textContent = "From. " + ((m.sender || "").trim() || "―");
+        card.querySelector(".msg-body").textContent = m.body || "";
+
         if (m.image_base64) {
           const img = document.createElement("img");
           img.className = "msg-photo";
@@ -429,7 +498,10 @@
     }
   }
 
-  backBtn.addEventListener("click", () => loadMonths(false));
+  backBtn.addEventListener("click", () => {
+    wrapEl.classList.remove("viewing-messages");
+    loadMonths(false);
+  });
 
   function setRecipient(r) {
     recipient = r;
