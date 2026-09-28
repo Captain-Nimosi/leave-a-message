@@ -139,6 +139,45 @@
 
   .rule { border: 0; border-top: 1px dashed var(--line); margin: 18px 0; }
 
+  /* 오픈 전 안내 배너: 메시지 입력 영역 가운데에 뜨는 빨간 팝업 */
+  .form-wrap { position: relative; }
+  .lock-banner {
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    z-index: 5;
+  }
+  .lock-banner[hidden] { display: none; }
+  .lock-banner:not([hidden]) { display: flex; }
+  .lock-card {
+    background: var(--paper);
+    border: 1.5px solid var(--error);
+    box-shadow: 0 6px 20px rgba(138, 42, 34, .18);
+    padding: 22px 20px;
+    text-align: center;
+    max-width: 260px;
+  }
+  .lock-banner-title {
+    margin: 0;
+    font-family: var(--font);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--error);
+  }
+  .lock-banner-body {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  form.locked {
+    opacity: .12;
+    filter: grayscale(1);
+    pointer-events: none;
+  }
+
   .field { margin: 0 0 4px; }
   input[type="text"], input[type="password"] {
     display: block;
@@ -275,7 +314,15 @@
 
     <hr class="rule">
 
-    <form id="form" novalidate>
+    <div class="form-wrap">
+      <div class="lock-banner" id="lock-banner" hidden>
+        <div class="lock-card">
+          <p class="lock-banner-title" id="lock-title"></p>
+          <p class="lock-banner-body" id="lock-body"></p>
+        </div>
+      </div>
+
+      <form id="form" novalidate>
       <div class="field">
         <textarea id="body" maxlength="1000" placeholder="메시지"></textarea>
         <p class="char-count" id="char-count">0 / 1,000</p>
@@ -308,7 +355,8 @@
 
       <button type="submit" class="send" id="send">보내기</button>
       <p class="status" id="status" role="status" aria-live="polite"></p>
-    </form>
+      </form>
+    </div>
 
     <hr class="rule">
     <p class="thanks" id="thanks">감사합니다.</p>
@@ -326,9 +374,14 @@
   const SUPABASE_KEY = "sb_publishable_5TM1cZjfOUbiFlVdzcn6zg_AaoD2fmz";
   const RECIPIENT = "ca"; // 이 페이지는 캐나다 집으로만 보내요
 
+  // 오픈 예정 시각: 한국 시간 2026-10-12 00:00. 보는 사람 기기 시간대와
+  // 상관없이 다들 같은 순간에 열리도록, 시간대(+09:00)를 고정해서 적어요.
+  const LAUNCH_AT = new Date("2026-10-12T00:00:00+09:00").getTime();
+
   const $ = (id) => document.getElementById(id);
   const form = $("form"), sender = $("sender"), body = $("body"), pass = $("pass");
   const remember = $("remember"), sendBtn = $("send"), statusEl = $("status"), receiptEl = $("receipt");
+  const lockBanner = $("lock-banner"), lockTitle = $("lock-title"), lockBody = $("lock-body");
   const photoInput = $("photo-input"), photoBtn = $("photo-btn");
   const photoPreview = $("photo-preview"), photoPreviewImg = $("photo-preview-img"), photoRemove = $("photo-remove");
   const charCount = $("char-count"), txnEl = $("txn");
@@ -374,6 +427,9 @@
       errOffline: "인터넷에 연결되지 않았어요. 연결을 확인하고 다시 눌러주세요.",
       photoPreparing: "사진을 준비하는 중이에요…",
       photoFail: "사진을 처리하지 못했어요. 다른 사진으로 시도해주세요.",
+      lockTitle: "10월 12일에 열려요",
+      lockBody: "아직 준비 중이에요. 한국 시간 10월 12일 0시부터 메시지를 보낼 수 있어요. 그때 이 페이지를 다시 열어주세요.",
+      errLocked: "아직 열리기 전이에요. 10월 12일부터 보낼 수 있어요.",
       toggleLabel: "EN",
     },
     en: {
@@ -402,6 +458,9 @@
       errOffline: "No internet connection. Check it and try again.",
       photoPreparing: "Preparing photo…",
       photoFail: "Couldn't process the photo. Try a different one.",
+      lockTitle: "Opening October 12",
+      lockBody: "Not open yet. You'll be able to send a message starting October 12, midnight Korea time. Come back and check again then.",
+      errLocked: "Not open yet. You can send starting October 12.",
       toggleLabel: "한국어",
     },
   };
@@ -425,7 +484,28 @@
     sendBtn.textContent = t("send");
     $("thanks").textContent = t("thanks");
     $("lang-toggle").textContent = t("toggleLabel");
+    lockTitle.textContent = t("lockTitle");
+    lockBody.textContent = t("lockBody");
   }
+
+  // ---------- 오픈 전 잠금 ----------
+  function isLocked() {
+    return Date.now() < LAUNCH_AT;
+  }
+  function applyLockState() {
+    const locked = isLocked();
+    lockBanner.hidden = !locked;
+    form.classList.toggle("locked", locked);
+    sender.disabled = locked;
+    body.disabled = locked;
+    photoBtn.disabled = locked;
+    pass.disabled = locked;
+    remember.disabled = locked;
+    sendBtn.disabled = locked;
+  }
+  // 페이지를 미리 열어두고 기다리는 친구도 있을 수 있으니, 새로고침 없이도
+  // 오픈 시각이 지나면 자동으로 풀리도록 가끔 다시 확인해요.
+  setInterval(applyLockState, 30000);
 
   // ---------- 프린터 소리 & 인쇄되어 나오는 효과 ----------
   function primeAudio() {
@@ -773,6 +853,8 @@
 
     // 주소창에 암호가 남지 않게 지워요
     if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+
+    applyLockState();
   })();
 
   body.addEventListener("input", () => { setStatus(""); updateCharCount(); });
@@ -823,6 +905,7 @@
   // ---------- 보내기 ----------
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (isLocked()) { applyLockState(); return fail(t("errLocked")); }
     primeAudio(); // 클릭 이벤트 안에서 바로 만들어야 소리가 나요
 
     const sRaw = sender.value.trim();
@@ -879,6 +962,9 @@
         fail(t("errImageBig"));
       } else if (data && data.error === "not_ready") {
         fail(t("errNotReady"));
+      } else if (data && data.error === "not_launched") {
+        applyLockState();
+        fail(t("errLocked"));
       } else {
         fail(t("errGeneric"));
       }
