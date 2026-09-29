@@ -143,8 +143,7 @@
   .form-wrap { position: relative; }
   .lock-banner {
     position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 202px; /* 메시지 입력창(텍스트박스) 영역 높이만큼만 잡아서, 그 가운데로 오게 해요 */
+    inset: 0;
     align-items: center;
     justify-content: center;
     padding: 10px;
@@ -159,6 +158,8 @@
     padding: 22px 20px;
     text-align: center;
     max-width: 260px;
+    max-height: 100%;
+    overflow-y: auto;
   }
   .lock-banner-title {
     margin: 0;
@@ -173,6 +174,15 @@
     line-height: 1.6;
     color: var(--ink);
     word-break: keep-all;
+  }
+  .lock-demo-photo {
+    display: block;
+    width: 100%;
+    max-width: 190px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    margin: 14px auto 0;
+    border: 1px solid var(--line);
   }
   form.locked {
     opacity: .12;
@@ -321,6 +331,8 @@
         <div class="lock-card">
           <p class="lock-banner-title" id="lock-title"></p>
           <p class="lock-banner-body" id="lock-body"></p>
+          <p class="lock-banner-body" id="lock-body-2"></p>
+          <img class="lock-demo-photo" src="nfc-demo.jpg" alt="">
         </div>
       </div>
 
@@ -383,7 +395,7 @@
   const $ = (id) => document.getElementById(id);
   const form = $("form"), sender = $("sender"), body = $("body"), pass = $("pass");
   const remember = $("remember"), sendBtn = $("send"), statusEl = $("status"), receiptEl = $("receipt");
-  const lockBanner = $("lock-banner"), lockTitle = $("lock-title"), lockBody = $("lock-body");
+  const lockBanner = $("lock-banner"), lockTitle = $("lock-title"), lockBody = $("lock-body"), lockBody2 = $("lock-body-2");
   const photoInput = $("photo-input"), photoBtn = $("photo-btn");
   const photoPreview = $("photo-preview"), photoPreviewImg = $("photo-preview-img"), photoRemove = $("photo-remove");
   const charCount = $("char-count"), txnEl = $("txn");
@@ -431,6 +443,7 @@
       photoFail: "사진을 처리하지 못했어요. 다른 사진으로 시도해주세요.",
       lockTitle: "10월 12일에 열려요",
       lockBody: "아직 준비 중이에요.<br>한국 시간 10월 12일 0시부터 메시지를 보낼 수 있어요.<br>그때 이 페이지를 다시 열어주세요.",
+      lockBody2: "메시지를 보내면, 니모시의 영수증 프린터에서 이렇게 메시지가 출력돼요.",
       errLocked: "아직 열리기 전이에요. 10월 12일부터 보낼 수 있어요.",
       toggleLabel: "EN",
     },
@@ -462,6 +475,7 @@
       photoFail: "Couldn't process the photo. Try a different one.",
       lockTitle: "Opening October 12",
       lockBody: "Not open yet.<br>You'll be able to send a message starting October 12, midnight Korea time.<br>Come back and check again then.",
+      lockBody2: "Once you send it, your message prints out like this on Nimosi's receipt printer.",
       errLocked: "Not open yet. You can send starting October 12.",
       toggleLabel: "한국어",
     },
@@ -488,6 +502,7 @@
     $("lang-toggle").textContent = t("toggleLabel");
     lockTitle.textContent = t("lockTitle");
     lockBody.innerHTML = t("lockBody");
+    lockBody2.textContent = t("lockBody2");
   }
 
   // ---------- 오픈 전 잠금 ----------
