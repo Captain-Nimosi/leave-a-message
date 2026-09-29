@@ -430,7 +430,7 @@
       photoPreparing: "사진을 준비하는 중이에요…",
       photoFail: "사진을 처리하지 못했어요. 다른 사진으로 시도해주세요.",
       lockTitle: "10월 12일에 열려요",
-      lockBody: "아직 준비 중이에요. 한국 시간 10월 12일 0시부터 메시지를 보낼 수 있어요. 그때 이 페이지를 다시 열어주세요.",
+      lockBody: "아직 준비 중이에요.<br>한국 시간 10월 12일 0시부터 메시지를 보낼 수 있어요.<br>그때 이 페이지를 다시 열어주세요.",
       errLocked: "아직 열리기 전이에요. 10월 12일부터 보낼 수 있어요.",
       toggleLabel: "EN",
     },
@@ -461,7 +461,7 @@
       photoPreparing: "Preparing photo…",
       photoFail: "Couldn't process the photo. Try a different one.",
       lockTitle: "Opening October 12",
-      lockBody: "Not open yet. You'll be able to send a message starting October 12, midnight Korea time. Come back and check again then.",
+      lockBody: "Not open yet.<br>You'll be able to send a message starting October 12, midnight Korea time.<br>Come back and check again then.",
       errLocked: "Not open yet. You can send starting October 12.",
       toggleLabel: "한국어",
     },
@@ -487,7 +487,7 @@
     $("thanks").textContent = t("thanks");
     $("lang-toggle").textContent = t("toggleLabel");
     lockTitle.textContent = t("lockTitle");
-    lockBody.textContent = t("lockBody");
+    lockBody.innerHTML = t("lockBody");
   }
 
   // ---------- 오픈 전 잠금 ----------
